@@ -1,0 +1,182 @@
+---
+title: "stress"
+output: html_document
+date: "2024-11-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+stress <- read_csv('/Users/villiamjensen/Downloads/stress_detection.csv')
+```
+
+```{r}
+stress %>% 
+  ggplot(aes(x = screen_on_time, y = PSS_score)) +
+  geom_point()
+
+stress %>% 
+  ggplot(aes(x = sleep_duration, y = PSS_score)) +
+  geom_point()
+
+stress %>% 
+  ggplot(aes(x = mobility_distance, y = PSS_score)) +
+  geom_point()
+
+stress %>% 
+  ggplot(aes(x = skin_conductance, y = PSS_score)) +
+  geom_point()
+
+
+summary(lm(PSS_score ~ mobility_distance, data = stress))
+
+```
+```{r}
+stress_agr <- stress %>%  
+  group_by(participant_id) %>%
+  summarize(
+    PSS = mean(PSS_score, na.rm = TRUE), 
+    sleep = mean(sleep_time, na.rm = TRUE), 
+    wake = mean(wake_time, na.rm = TRUE), 
+    screentime = mean(screen_on_time, na.rm = TRUE),
+    radius = mean(mobility_radius),
+    distance = mean(mobility_distance),
+    skin_conductance = mean(skin_conductance),
+    .groups = "drop"
+  )
+```
+
+```{r}
+stress_agr <- stress %>%  
+  group_by(participant_id) %>%  
+  summarize(
+    across(where(is.numeric), mean, na.rm = TRUE), 
+    .groups = "drop"
+  )
+```
+
+```{r}
+stress_agr <- stress_agr %>% 
+  rename(
+    PSS = PSS_score, 
+    sleep = sleep_duration, 
+    wake = wake_time,
+    radius = mobility_radius,
+    distance = mobility_distance,
+    
+  )
+```
+
+
+```{r}
+stress_agr %>% 
+  ggplot(aes(x = wake, y = PSS)) +
+  geom_point() + 
+  geom_smooth(method = 'lm')
+```
+```{r}
+summary(lm(PSS ~ Openness + Conscientiousness + Neuroticism + Extraversion + Agreeableness, stress_agr))
+```
+
+```{r}
+summary(lmerTest::lmer(PSS_score ~ sleep_duration + wake_time + (1 | participant_id), data = stress))
+
+summary(lm(PSS ~ sleep + wake, data = stress_agr))
+```
+
+```{r}
+stress_agr %>% 
+  ggplot(aes(x = sleep, y = PSS)) +
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  labs(x = 'Sleep Duration', title = 'PSS by Sleep Duration')
+
+stress_agr %>% 
+  ggplot(aes(x = wake, y = PSS)) +
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  labs(x = 'Wakeup Time', title = 'PSS by Wakeup Time')
+```
+
+```{r}
+# Create the individual plots for each Big Five trait
+plot_openness <- ggplot(stress_agr, aes(x = Openness, y = PSS)) +
+  geom_point() + 
+  geom_smooth(method = 'lm') +
+  labs(title = "Openness vs PSS")
+
+plot_conscientiousness <- ggplot(stress_agr, aes(x = Conscientiousness, y = PSS)) +
+  geom_point() + 
+  geom_smooth(method = 'lm') +
+  labs(title = "Conscientiousness vs PSS")
+
+plot_extraversion <- ggplot(stress_agr, aes(x = Extraversion, y = PSS)) +
+  geom_point() + 
+  geom_smooth(method = 'lm') +
+  labs(title = "Extraversion vs PSS")
+
+plot_agreeableness <- ggplot(stress_agr, aes(x = Agreeableness, y = PSS)) +
+  geom_point() + 
+  geom_smooth(method = 'lm', color = "red") +
+  labs(title = "Agreeableness vs PSS")
+
+plot_neuroticism <- ggplot(stress_agr, aes(x = Neuroticism, y = PSS)) +
+  geom_point() + 
+  geom_smooth(method = 'lm') +
+  labs(title = "Neuroticism vs PSS")
+```
+
+```{r}
+library(gridExtra)
+
+# Arrange the plots in a 2x3 grid (or any layout you'd prefer)
+grid.arrange(
+  plot_openness, plot_conscientiousness, plot_extraversion,
+  plot_agreeableness, plot_neuroticism, ncol = 3
+)
+
+```
+```{r}
+# Save the grid of plots to a PNG file
+png("big_five_vs_PSS.png", width = 10, height = 6, units = "in", res = 300)
+
+# Arrange the plots in a 2x3 grid
+grid.arrange(
+  plot_openness, plot_conscientiousness, plot_extraversion,
+  plot_agreeableness, plot_neuroticism, ncol = 3
+)
+
+```
+
+
+
+```{r}
+summary(lm(PSS ~ sleep + wake, data = stress_agr))
+
+summary(lm(PSS ~ radius + distance, data = stress_agr))
+```
+```{r}
+summary(lm(PSS ~ radius + distance, data = stress_agr))
+```
+```{r}
+stress_agr %>% 
+  summarize(min(sleep), max(sleep))
+```
+
+
+```{r}
+stress_agr %>% 
+  ggplot(aes(x = radius, y = PSS)) + 
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  labs(x = 'Radius of Mobility (km)', title = 'PSS by Radius of Mobility')
+
+stress_agr %>% 
+  ggplot(aes(x = distance, y = PSS)) + 
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  labs(x = 'Distance Travelled (km)', title = 'PSS by Distance Travelled')
+```
+
